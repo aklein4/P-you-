@@ -1,6 +1,6 @@
 import os
 
-DIRECTORIES = ["fixed_data", "free_data"]
+DIRECTORIES = ["data/fixed_data", "data/free_data"]
 
 letters = "qwertyuiopasdfghjklzxcvbnm "
 
@@ -21,8 +21,14 @@ def main():
                 combos[(key[0],key[1])] += 1
             data.close()
 
+    total = 0
+    count = 0
     for key in combos:
-        print(key, "=", combos[key])
+        total += 1
+        if combos[key] == 0:
+            count += 1
+            print(key, "=", combos[key])
+    print("Known combinations:", count, "/", total)
     
 
 if __name__ == "__main__":
