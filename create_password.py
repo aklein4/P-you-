@@ -70,7 +70,6 @@ def get_data(combos):
         clean_data.append(clean_user)
     return clean_data
 
-
 def get_combos(password):
     combos = []
     for i in range(1, len(password)):
@@ -106,7 +105,6 @@ def get_weights(data):
     return theta_old
 
 def sigmoid(x):
-    x = x/10
     if x < -20:
         return 0
     if x > 20:

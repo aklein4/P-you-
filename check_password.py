@@ -24,7 +24,6 @@ def get_password():
     return password
 
 def sigmoid(x):
-    x = x/10
     if x < -20:
         return 0
     if x > 20:
