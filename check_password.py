@@ -3,7 +3,7 @@ import math
 
 USER_FILE = "user"
 
-P_HACKER = 0.4
+P_HACKER = 0.9
 
 def check(times):
     times.append(1)
