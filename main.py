@@ -93,7 +93,7 @@ class App:
                 self.input.bind("<Key>", self.empty_func)
                 self.input_txt.set(self.input_txt.get()+event.char)
                 self.input.config(state='disabled')
-                self.output_txt.set("password correct \n probability: "+ str(prob_correct)+"\n press enter to return to main menu")
+                self.output_txt.set("password correct \nprobability: "+ str(prob_correct)+"\npress enter to return to main menu")
                 return
             print("probability below threshold: p =", prob_correct)
             self.output_txt.set("Incorrect password, press enter to retry")
@@ -122,7 +122,7 @@ class App:
         self.times = []
         self.data = []
         self.time = time.time()
-        self.output_txt.set("password: "+self.password+"\n please enter password "+str(N_TRIALS)+" times \n 0/"+str(N_TRIALS))
+        self.output_txt.set("password: "+self.password+"\nplease enter password "+str(N_TRIALS)+" times \n0/"+str(N_TRIALS))
     
     def time_password_create(self, event):
         if event.char not in ACCEPT:
@@ -132,7 +132,7 @@ class App:
             self.input.config(state='disabled')
             return
         if event.char != self.password[self.key_count]:
-            self.output_txt.set("password: "+self.password+"\n please enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS)+"\n press enter to retry")
+            self.output_txt.set("password: "+self.password+"\nplease enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS)+"\npress enter to retry")
             self.input.bind("<Return>", self.restart_timing)
             self.input.bind("<Key>", self.empty_func)
             self.input_txt.set(self.input_txt.get()+event.char)
@@ -147,14 +147,14 @@ class App:
             self.input.bind("<Key>", self.empty_func)
             self.input_txt.set(self.input_txt.get()+event.char)
             self.input.config(state='disabled')
-            self.output_txt.set("password: "+self.password+"\n please enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS)+"\n press enter to continue")
+            self.output_txt.set("password: "+self.password+"\n please enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS)+"\npress enter to continue")
 
     def restart_timing(self, event):
         self.input.config(state='normal')
         self.times = []
         self.time = time.time()
         self.key_count = 0
-        self.output_txt.set("password: "+self.password+"\n please enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS))
+        self.output_txt.set("password: "+self.password+"\nplease enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS))
         self.input.delete(0, END)
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_create)
@@ -167,14 +167,16 @@ class App:
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_create)
         self.input.delete(0, END)
-        self.output_txt.set("password: "+self.password+"\n please enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS))
+        self.output_txt.set("password: "+self.password+"\nplease enter password "+str(N_TRIALS)+" times \n"+str(self.count)+"/"+str(N_TRIALS))
         self.key_count = 0
         if self.count == N_TRIALS:
             self.finish_create()
 
     def finish_create(self):
+        self.output_txt.set("Input complete.\nProcessing...")
+        self.window.update()
         create_password.create(self.password, self.data)
-        self.output_txt.set("Password created! \n press enter to return to main menu")
+        self.output_txt.set("Password created! \npress enter to return to main menu")
         self.input.bind("<Return>", self.cancel_enter)
         self.input.bind("<Key>", self.empty_func)
         self.input.config(state='disabled')

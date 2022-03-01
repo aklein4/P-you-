@@ -2,12 +2,17 @@ import numpy
 import os
 import numpy as np
 import math
+import sys
+
+from sklearn.manifold import trustworthiness
+
 
 DATA_FOLDERS = ["data/fixed_data", "data/free_data"]
 
 USER_FILE = "user"
 STEP = 0.0001
 THRESH = STEP/10
+TIMEOUT = 1000
 P_HACKER = 0.4
 
 def create(password, times):
@@ -76,7 +81,7 @@ def get_combos(password):
         combos.append((password[i-1], password[i]))
     return combos
 
-def get_weights(data):
+def get_weights(data, track=True):
     L = len(data[0])
     for i in range(len(data)):
         data[i].append(1)
@@ -89,7 +94,11 @@ def get_weights(data):
             n_hack += 1
     theta_old = np.full(L, .01)
     dist = THRESH*2
-    while dist > THRESH:
+    dist0 = THRESH*2
+    t = 0
+    while dist > THRESH and t < TIMEOUT:
+        if track:
+            progress(dist0-dist, abs(dist0-THRESH), suff="dist: "+str(dist))
         theta_new = theta_old.copy()
         for i in range(len(data)):
             y = data[i][0]
@@ -101,7 +110,14 @@ def get_weights(data):
                 delta *= P_HACKER/n_hack
             theta_new += delta
         dist = np.linalg.norm(theta_new-theta_old)
+        if dist0 == THRESH*2:
+            dist0 = dist
         theta_old = theta_new.copy()
+        t += 1
+    if track:
+        progress(10, 10, done=True, suff="dist: "+str(dist))
+    if t > TIMEOUT:
+        print("Timed out.")
     return theta_old
 
 def sigmoid(x):
@@ -110,3 +126,18 @@ def sigmoid(x):
     if x > 20:
         return 1
     return 1 / (1 + math.exp(-x))
+
+def progress(count, total, bar_len=25, done=False, suff=""):
+    suff = str(suff)
+    # https://gist.github.com/vladignatyev/06860ec2040cb497f0f3
+    perc = count/total
+    if perc > 1:
+        perc = 1
+    if perc < 0:
+        perc = 0
+    bar = "\u25A0" * round(perc*bar_len)
+    bar += "\u25A1" * round((1-perc)*bar_len)
+    if not done:
+        print(bar, suff, end="\r")
+        return
+    print(bar)
