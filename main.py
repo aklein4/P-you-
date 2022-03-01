@@ -8,7 +8,7 @@ THRESHOLD = 0.5
 
 N_TRIALS = 10
 
-ACCEPT = "1234567890-=!@#$%^&*()_+qwertyuiop[]asdfghjkl;'zxcvbnm,./<>?:"
+ACCEPT = "qwertyuioplkjhgfdsazxcvbnm"
 
 class App:
 
