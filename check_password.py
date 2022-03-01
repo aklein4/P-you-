@@ -10,12 +10,24 @@ def check(times):
     t = np.array(times)
     f = open(USER_FILE+".txt", "r")
     password = f.readline().strip("\n")
-    weights = f.readline().strip().split(",")
+    weights1 = f.readline().strip().split(",")
+    weights2 = f.readline().strip().split(",")
     f.close()
-    for i in range(len(weights)):
-        weights[i] = float(weights[i])
-    theta = np.array(weights)
-    return sigmoid(np.dot(theta, t))
+    L = len(password)
+    w = []
+    for i in range(len(weights1)):
+        weights1[i] = float(weights1[i])
+    for i in range(len(weights2)):
+        weights2[i] = float(weights2[i])
+    w.append(np.array(weights1).reshape(L, L))
+    w.append(np.array(weights2))
+    z0 = np.matmul(w[0], t)
+    a0 = np.zeros(L)
+    for i in range(L):
+        a0[i] = sig(z0[i])
+    z1 = np.matmul(w[1], a0)
+    a1 = sig(z1)
+    return a1
 
 def get_password():
     f = open(USER_FILE+".txt", "r")
@@ -23,7 +35,7 @@ def get_password():
     f.close()
     return password
 
-def sigmoid(x):
+def sig(x):
     if x < -20:
         return 0
     if x > 20:
