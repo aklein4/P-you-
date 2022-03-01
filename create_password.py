@@ -98,7 +98,7 @@ def get_weights(data, track=True):
     t = 0
     while dist > THRESH and t < TIMEOUT:
         if track:
-            progress(dist0-dist, abs(dist0-THRESH), suff="dist: "+str(dist))
+            progress(dist0/dist, dist0/THRESH, suff="dist: "+str(dist))
         theta_new = theta_old.copy()
         for i in range(len(data)):
             y = data[i][0]
