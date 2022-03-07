@@ -3,32 +3,40 @@ import math
 
 USER_FILE = "user"
 
-P_HACKER = 0.9
-
 def check(times):
     times.insert(0,1)
     t = np.array(times)
+    weights = []
     f = open(USER_FILE+".txt", "r")
     password = f.readline().strip("\n")
-    weights1 = f.readline().strip().split(",")
-    weights2 = f.readline().strip().split(",")
+    for line in f:
+        weights.append(line.strip().split(","))
     f.close()
     L = 2*len(password)-2
     w = []
-    for i in range(len(weights1)):
-        weights1[i] = float(weights1[i])
-    for i in range(len(weights2)):
-        weights2[i] = float(weights2[i])
-    w.append(np.array(weights1).reshape(L, L+1))
-    w.append(np.array(weights2))
-    z0 = np.matmul(w[0], t)
-    a0 = np.zeros(L+1)
-    a0[0] = 1
-    for i in range(1,L+1):
-        a0[i] = sig(z0[i-1])
-    z1 = np.matmul(w[1], a0)
-    a1 = sig(z1)
-    return a1
+    for i in range(len(weights)):
+        for j in range(len(weights[i])):
+            weights[i][j] = float(weights[i][j])
+    for layz in range(0,len(weights)-1):
+        curr = np.array(weights[layz])
+        w.append(curr.reshape(L, L+1))
+    w.append(np.array(weights[-1]))
+    a = []
+    z = [np.matmul(w[0], t)]
+    grad = []
+    for layz in range(len(w)-1):
+        a.append(np.zeros(L+1))
+        a[layz][0] = 1
+        for i in range(1,L+1):
+            a[layz][i] = sig(z[layz][i-1])
+        # input to next
+        if(layz <= len(w)-1):
+            z.append(np.matmul(w[layz+1], a[layz]))
+
+    # output of final
+    a_fin = sig(z[len(w)-1])
+
+    return a_fin
 
 def get_password():
     f = open(USER_FILE+".txt", "r")

@@ -7,8 +7,9 @@ import check_password
 THRESHOLD = 0.5
 
 N_TRIALS = 10
+UNFILLED = 0
 
-ACCEPT = "qwertyuioplkjhgfdsazxcvbnm"
+ACCEPT = "qwertyuioplkjhgfdsazxcv bnm"
 
 class App:
 
@@ -71,8 +72,8 @@ class App:
         self.map_key_to_ind = {}
         self.press_times = []
         self.hold_times = []
-        for i in range(len(self.password)-1):
-            self.hold_times.append(-500)
+        for i in range(len(self.password)):
+            self.hold_times.append(UNFILLED)
 
     def time_password_check(self, event):
         if event.char not in ACCEPT:
@@ -97,7 +98,8 @@ class App:
             self.times.append((time.time()-self.time)*1000)
             self.time = time.time()
         if self.key_count == len(self.password):
-            for holder in self.hold_times:
+            self.input.bind("<KeyRelease>", self.empty_func)
+            for holder in self.hold_times[:-1]:
                 self.times.append(holder)
             prob_correct = check_password.check(self.times)
 
@@ -127,8 +129,8 @@ class App:
         self.map_key_to_ind = {}
         self.press_times = []
         self.hold_times = []
-        for i in range(len(self.password)-1):
-            self.hold_times.append(-500)
+        for i in range(len(self.password)):
+            self.hold_times.append(UNFILLED)
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_check)
         self.input.bind("<KeyRelease>", self.register_up)
@@ -149,7 +151,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(-500)
+            self.hold_times.append(UNFILLED)
         self.time = time.time()
         self.output_txt.set("password: "+self.password+"\nplease enter password "+str(N_TRIALS)+" times \n0/"+str(N_TRIALS))
     
@@ -202,7 +204,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(-500)
+            self.hold_times.append(UNFILLED)
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_create)
         self.input.bind("<KeyRelease>", self.register_up)
@@ -218,7 +220,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(-500)
+            self.hold_times.append(UNFILLED)
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_create)
         self.input.bind("<KeyRelease>", self.register_up)

@@ -1,20 +1,19 @@
-from aiohttp import TraceRequestChunkSentParams
 import numpy
 import os
 import numpy as np
 import math
 import random
-import sys
 
 
 DATA_FOLDERS = ["data/fixed_data", "data/free_data"]
-
 USER_FILE = "user"
-STEP = 1
-THRESH = .001
+
+N_MID = 2
+STEP = 5
+THRESH = .005
 TIMEOUT = 1000
-P_HACKER = 0.4
-N_MID = 0
+P_HACKER = 0.9
+
 TRACKING = True
 
 def create(password, times):
@@ -28,14 +27,15 @@ def create(password, times):
     weights = get_weights(data)
     f = open(USER_FILE+".txt", "w")
     f.write(password+"\n")
+    for layz in range(N_MID+1):
+        line = ""
+        for row in weights[layz]:
+            for x in row:
+                line += ","+str(x)
+        line += "\n"
+        f.write(line[1:])
     line = ""
-    for row in weights[0]:
-        for x in row:
-            line += ","+str(x)
-    line += "\n"
-    f.write(line[1:])
-    line = ""
-    for x in weights[1]:
+    for x in weights[N_MID+1]:
         line += ","+str(x)
     line += "\n"
     f.write(line[1:])
@@ -174,22 +174,21 @@ def get_weights(data, track=True):
         theta_old.append(np.zeros((L,L+1)))
         for i in range(0,L):
             # 1 weight is on (-1,1)
-            theta_old[0][i,0] = (random.random()*2)-1
+            theta_old[layz+1][i,0] = (random.random()*2)-1
             # weight for others is in {-4/500n, 4/500n}
             for j in range(1,L+1):
-                theta_old[0][i,j] = random.choice([-1,1])*8/L
+                theta_old[layz+1][i,j] = random.choice([-1,1])*8/L
     # final layer
     theta_old.append(np.zeros(L+1))
-    theta_old[1][0] = (random.random()*2)-1
+    theta_old[N_MID+1][0] = (random.random()*2)-1
     for i in range(1,L+1):
-        theta_old[1][i] = random.choice([-1,1])*8/L
-
+        theta_old[N_MID+1][i] = random.choice([-1,1])*8/L
     err = THRESH*2
     n = 0
     err0 = -1
     while err > THRESH and n < TIMEOUT:
         if TRACKING:
-            progress(2**abs(err-err0), 2**abs(err0-THRESH), suff=str(n)+": "+str(err))
+            progress(10**abs(err-err0), 10**abs(err0-THRESH), suff=str(n)+": "+str(err))
         n += 1
         err = 0
         theta_new = []
@@ -211,7 +210,8 @@ def get_weights(data, track=True):
                 for i in range(1,L+1):
                     a[layz][i] = sig(z[layz][i-1])
                 # input to next
-                z.append(numpy.matmul(theta_old[layz+1], a[layz]))
+                if(layz <= N_MID):
+                    z.append(numpy.matmul(theta_old[layz+1], a[layz]))
 
             # output of final
             a_fin = sig(z[N_MID+1])
@@ -241,21 +241,30 @@ def get_weights(data, track=True):
             delta_curr = delta_fin
             for layz in range(N_MID, -1, -1):
                 # change in final input  from first output
-                dzup_dame = theta_old[layz+1][1:]
+                if layz == N_MID:
+                    dzup_dame = theta_old[layz+1][1:]
+                else:
+                    dzup_dame = theta_old[layz+1][:,1:]
                 # change in first output from first input
                 dame_dzme = np.zeros(L)
                 for i in range(L):
                     dame_dzme[i] = dsig(z[layz][i])
                 # how much each node input needs to change
-                delta_curr = delta_curr*np.multiply(dame_dzme, np.transpose(dzup_dame))
+                if layz==N_MID:
+                    delta_curr = delta_curr*np.multiply(dame_dzme, np.transpose(dzup_dame))
+                else:
+                    delta_curr = np.multiply(delta_curr,np.matmul(dzup_dame, dame_dzme))
                 # how much first inputs need to change
-                grad[layz] = np.tensordot(delta_curr, z[layz], axes=0)/np.linalg.norm(z[layz])
+                if layz > 0:
+                    grad[layz] = np.tensordot(delta_curr, a[layz-1], axes=0)/np.linalg.norm(a[layz-1])
+                else:
+                    grad[layz] = np.tensordot(delta_curr, x, axes=0)/np.linalg.norm(x)
 
             for layz in range(len(grad)):
-                theta_new[layz] += grad[layz]
+                theta_new[layz] -= grad[layz]
 
         for layz in range(len(theta_old)):
-                theta_new[layz] = theta_new[layz].copy()
+                theta_old[layz] = theta_new[layz].copy()
         if err0==-1:
             err0 = err
 
@@ -266,9 +275,9 @@ def get_weights(data, track=True):
     return theta_old
 
 def sig(x):
-    if x > 100:
+    if x > 50:
         return 1
-    if x < -100:
+    if x < -50:
         return 0
     return 1 / (1 + math.exp(-x))
 
