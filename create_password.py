@@ -3,16 +3,15 @@ import numpy
 import os
 import numpy as np
 import math
+import random
 import sys
-
-from sklearn.manifold import trustworthiness
 
 
 DATA_FOLDERS = ["data/fixed_data", "data/free_data"]
 
 USER_FILE = "user"
-STEP = 1/10
-THRESH = STEP/1000
+STEP = 1
+THRESH = .001
 TIMEOUT = 150
 P_HACKER = 0.4
 
@@ -89,9 +88,11 @@ def get_combos(password):
     return combos
 
 def get_weights(data, track=True):
-    L = len(data[0])
+
+    # prepare data
+    L = len(data[0])-1
     for i in range(len(data)):
-        data[i].append(1)
+        data[i].insert(1,1)
     n_hack = 0
     n_user = 0
     for user in data:
@@ -99,61 +100,95 @@ def get_weights(data, track=True):
             n_user += 1
         else:
             n_hack += 1
+
+    # Get initial weights
     theta_old = []
-    theta_old.append(np.random.rand(L,L)/100)
-    theta_old.append(np.random.rand(L)/100)
-    dist = THRESH*2
-    dist0 = THRESH*2
-    t = 0
-    tot = 0
-    while dist > THRESH or t < TIMEOUT:
-        tot = 0
-        if track:
-            progress(t, TIMEOUT, suff="dist: "+str(dist))
-        theta_new = theta_old.copy()
+    # layer 0
+    theta_old.append(np.zeros((L,L+1)))
+    for i in range(0,L):
+        # 1 weight is on (-1,1)
+        theta_old[0][i,0] = (random.random()*2)-1
+        # weight for others is in {-4/500n, 4/500n}
+        for j in range(1,L+1):
+            theta_old[0][i,j] = random.choice([-1,1])*4/(500*L)
+    # layer 2
+    theta_old.append(np.zeros(L+1))
+    theta_old[1][0] = (random.random()*2)-1
+    for i in range(1,L+1):
+        theta_old[1][i] = random.choice([-1,1])*8/L
+
+    err = THRESH*2
+    n = 0
+    err0 = -1
+    while err > THRESH:
+        progress(2**abs(err-err0), 2**abs(err0-THRESH), suff=str(err))
+        n += 1
+        err = 0
+        theta_new = []
+        theta_new.append(theta_old[0].copy())
+        theta_new.append(theta_old[1].copy())
+
         for pair in data:
+            # inputs
             y = pair[0]
-            x = np.transpose(np.array(pair[1:]))
+            x = np.array(pair[1:])
             z0 = numpy.matmul(theta_old[0], x)
-            a0 = np.zeros(L)
-            for i in range(L):
-                a0[i] = sig(z0[i])
+            # output of first layer
+            a0 = np.zeros(L+1)
+            a0[0] = 1
+            for i in range(1,L+1):
+                a0[i] = sig(z0[i-1])
+            # input to final
             z1 = numpy.matmul(theta_old[1], a0)
+            # output of final
             a1 = sig(z1)
+            # derivitive of error
+            err_d = abs(y-a1)
+            if err_d > 0.5:
+                if y == 1:
+                    err_d *= (1-P_HACKER)/n_user
+                else:
+                    err_d *= P_HACKER/n_hack
+                err += err_d
             dE_da1 = -(y-a1)
+            # change of output per final input
             da1_dz1 = dsig(z1)
+            # how much the final input should change
             delta1 = dE_da1*da1_dz1*STEP
             if y == 1:
-                delta1 /= n_user
+                delta1 *= (1-P_HACKER)/n_user
             else:
                 delta1 *= P_HACKER/n_hack
-            grad1 = delta1*a0
+            # how the final input weights should change
+            grad1 = delta1*a0/np.linalg.norm(a0)
 
-            dz1_da0 = theta_old[1]
+            # change in final input  from first output
+            dz1_da0 = theta_old[1][1:]
+            # change in first output from first input
             da0_dz0 = np.zeros(L)
             for i in range(L):
                 da0_dz0[i] = dsig(z0[i])
+            # how much each node input needs to change
             delta0 = delta1*np.multiply(da0_dz0, np.transpose(dz1_da0))
-            grad0 = np.tensordot(delta0, x, axes=0)
+            # how much first inputs need to change
+            grad0 = np.tensordot(delta0, x, axes=0)/np.linalg.norm(x)
 
             theta_new[0] -= grad0
             theta_new[1] -= grad1
-        dist = np.linalg.norm(1)
-        print(tot)
-        if dist0 == THRESH*2:
-            dist0 = dist
-        theta_old = theta_new.copy()
-        t += 1
-    if track:
-        progress(10, 10, done=True, suff="dist: "+str(dist))
-    print(t)
+
+        theta_old[0] = theta_new[0].copy()
+        theta_old[1] = theta_new[1].copy()
+        if err0==-1:
+            err0 = err
+
+    progress(10, 10, done=True, suff=str(err))
     return theta_old
 
 def sig(x):
-    if x < -20:
-        return 0
-    if x > 20:
+    if x > 100:
         return 1
+    if x < -100:
+        return 0
     return 1 / (1 + math.exp(-x))
 
 def dsig(x):
@@ -173,6 +208,64 @@ def progress(count, total, bar_len=25, done=False, suff=""):
         print(bar, suff, end="\r")
         return
     print(bar)
+
+# L = 3-1
+# pair = [1,1,200,300]
+# # Get initial weights
+# theta_old = []
+# # layer 0
+# theta_old.append(np.zeros((L,L+1)))
+# for i in range(0,L):
+#     # 1 weight is on (-1,1)
+#     theta_old[0][i,0] = (random.random()*2)-1
+#     # weight for others is in {-4/500n, 4/500n}
+#     for j in range(1,L+1):
+#         theta_old[0][i,j] = random.choice([-1,1])*4/(500*L)
+# # layer 2
+# theta_old.append(np.zeros(L+1))
+# theta_old[1][0] = (random.random()*2)-1
+# for i in range(1,L+1):
+#     theta_old[1][i] = random.choice([-1,1])*8/L
+
+# y = pair[0]
+# x = np.array(pair[1:])
+# z0 = numpy.matmul(theta_old[0], x)
+
+# a0 = np.zeros(L+1)
+# a0[0] = 1
+# for i in range(1,L+1):
+#     a0[i] = sig(z0[i-1])
+# z1 = numpy.matmul(theta_old[1], a0)
+# # output of final
+# a1 = sig(z1)
+# # derivitive of error
+# dE_da1 = -(y-a1)
+# # change of output per final input
+# da1_dz1 = dsig(z1)
+# # how much the final input should change
+# delta1 = dE_da1*da1_dz1*STEP
+# if y == 1:
+#     delta1 /= 10
+# else:
+#     delta1 *= P_HACKER/100
+# # how the final input weights should change
+# grad1 = delta1*a0
+
+# # change in final input  from first output
+# dz1_da0 = theta_old[1][1:]
+# # change in first output from first input
+# da0_dz0 = np.zeros(L)
+# for i in range(L):
+#     da0_dz0[i] = dsig(z0[i])
+# # how much each node input needs to change
+# delta0 = delta1*np.multiply(da0_dz0, np.transpose(dz1_da0))
+# print(delta0)
+# # how much first inputs need to change
+# grad0 = np.tensordot(delta0, x, axes=0)
+# print(grad0)
+
+
+
 
 # theta_old = [np.array([[1,2],[3,4]]), np.array([5,6])]
 # L = 2
