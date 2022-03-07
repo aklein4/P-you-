@@ -14,6 +14,7 @@ STEP = 1
 THRESH = .001
 TIMEOUT = 1000
 P_HACKER = 0.4
+N_MID = 0
 TRACKING = True
 
 def create(password, times):
@@ -160,7 +161,7 @@ def get_weights(data, track=True):
 
     # Get initial weights
     theta_old = []
-    # layer 0
+    # first layer 0
     theta_old.append(np.zeros((L,L+1)))
     for i in range(0,L):
         # 1 weight is on (-1,1)
@@ -168,7 +169,16 @@ def get_weights(data, track=True):
         # weight for others is in {-4/500n, 4/500n}
         for j in range(1,L+1):
             theta_old[0][i,j] = random.choice([-1,1])*4/(500*L)
-    # layer 2
+    # inter layers
+    for layz in range(N_MID):
+        theta_old.append(np.zeros((L,L+1)))
+        for i in range(0,L):
+            # 1 weight is on (-1,1)
+            theta_old[0][i,0] = (random.random()*2)-1
+            # weight for others is in {-4/500n, 4/500n}
+            for j in range(1,L+1):
+                theta_old[0][i,j] = random.choice([-1,1])*8/L
+    # final layer
     theta_old.append(np.zeros(L+1))
     theta_old[1][0] = (random.random()*2)-1
     for i in range(1,L+1):
@@ -183,25 +193,31 @@ def get_weights(data, track=True):
         n += 1
         err = 0
         theta_new = []
-        theta_new.append(theta_old[0].copy())
-        theta_new.append(theta_old[1].copy())
+        for layz in range(len(theta_old)):
+            theta_new.append(theta_old[layz].copy())
 
         for pair in data:
             # inputs
             y = pair[0]
             x = np.array(pair[1:])
-            z0 = numpy.matmul(theta_old[0], x)
-            # output of first layer
-            a0 = np.zeros(L+1)
-            a0[0] = 1
-            for i in range(1,L+1):
-                a0[i] = sig(z0[i-1])
-            # input to final
-            z1 = numpy.matmul(theta_old[1], a0)
+            a = []
+            z = [numpy.matmul(theta_old[0], x)]
+            grad = []
+            for g in range(len(theta_old)):
+                grad.append(0)
+            for layz in range(N_MID+1):
+                a.append(np.zeros(L+1))
+                a[layz][0] = 1
+                for i in range(1,L+1):
+                    a[layz][i] = sig(z[layz][i-1])
+                # input to next
+                z.append(numpy.matmul(theta_old[layz+1], a[layz]))
+
             # output of final
-            a1 = sig(z1)
+            a_fin = sig(z[N_MID+1])
+
             # derivitive of error
-            err_d = (y-a1)**2
+            err_d = (y-a_fin)**2
             # err_d = abs(y-a1)
             # if err_d > 0.5:
             if y == 1:
@@ -209,34 +225,37 @@ def get_weights(data, track=True):
             else:
                 err_d *= P_HACKER/n_hack
             err += err_d
-            dE_da1 = -(y-a1)
+            dE_dafin = -(y-a_fin)
+
             # change of output per final input
-            da1_dz1 = dsig(z1)
+            dafin_dzfin = dsig(z[N_MID+1])
             # how much the final input should change
-            delta1 = dE_da1*da1_dz1*STEP
+            delta_fin = dE_dafin*dafin_dzfin*STEP
             if y == 1:
-                delta1 *= (1-P_HACKER)/n_user
+                delta_fin *= (1-P_HACKER)/n_user
             else:
-                delta1 *= P_HACKER/n_hack
+                delta_fin *= P_HACKER/n_hack
             # how the final input weights should change
-            grad1 = delta1*a0/np.linalg.norm(a0)
+            grad[N_MID+1] = delta_fin*a[N_MID]/np.linalg.norm(a[N_MID])
 
-            # change in final input  from first output
-            dz1_da0 = theta_old[1][1:]
-            # change in first output from first input
-            da0_dz0 = np.zeros(L)
-            for i in range(L):
-                da0_dz0[i] = dsig(z0[i])
-            # how much each node input needs to change
-            delta0 = delta1*np.multiply(da0_dz0, np.transpose(dz1_da0))
-            # how much first inputs need to change
-            grad0 = np.tensordot(delta0, x, axes=0)/np.linalg.norm(x)
+            delta_curr = delta_fin
+            for layz in range(N_MID, -1, -1):
+                # change in final input  from first output
+                dzup_dame = theta_old[layz+1][1:]
+                # change in first output from first input
+                dame_dzme = np.zeros(L)
+                for i in range(L):
+                    dame_dzme[i] = dsig(z[layz][i])
+                # how much each node input needs to change
+                delta_curr = delta_curr*np.multiply(dame_dzme, np.transpose(dzup_dame))
+                # how much first inputs need to change
+                grad[layz] = np.tensordot(delta_curr, z[layz], axes=0)/np.linalg.norm(z[layz])
 
-            theta_new[0] -= grad0
-            theta_new[1] -= grad1
+            for layz in range(len(grad)):
+                theta_new[layz] += grad[layz]
 
-        theta_old[0] = theta_new[0].copy()
-        theta_old[1] = theta_new[1].copy()
+        for layz in range(len(theta_old)):
+                theta_new[layz] = theta_new[layz].copy()
         if err0==-1:
             err0 = err
 
