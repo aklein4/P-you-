@@ -12,15 +12,17 @@ DATA_FOLDERS = ["data/fixed_data", "data/free_data"]
 USER_FILE = "user"
 STEP = 1
 THRESH = .001
-TIMEOUT = 150
+TIMEOUT = 1000
 P_HACKER = 0.4
 
 def create(password, times):
 
     combos = get_combos(password)
-    data = get_data(combos)
+    data = get_data(combos, password)
+
     for set in times:
         data.append([1]+set)
+
     weights = get_weights(data)
     f = open(USER_FILE+".txt", "w")
     f.write(password+"\n")
@@ -48,36 +50,90 @@ def create(password, times):
     #     f.write(line[1:])
     # f.close()
 
-def get_data(combos):
+def get_data(combos, password):
+    data = []
+    pass_list = []
+    for i in range(len(password)-1):
+        pass_list.append(password[i])
+    for folder in DATA_FOLDERS:
+        for file in os.listdir(folder):
+            user = {}
+            user_hold = {}
+            num = 0
+            total = 0
+            total_hold = 0
+            for com in combos:
+                user[com] = []
+            for ke in pass_list:
+                user_hold[ke] = []
+            user_file = open(folder+"/"+file, "r", encoding="utf-8")
+            for line in user_file:
+                num += 1
+                clean = line.strip("\n").split(",")
+                total += int(clean[2])
+                total_hold += int(clean[3])
+                if (clean[0], clean[1]) in combos:
+                    user[(clean[0], clean[1])].append(int(clean[2]))
+                if clean[1] in pass_list:
+                    user_hold[clean[1]].append(int(clean[3]))
+            user_file.close()
+            if num != 0:
+                avreg = total/num
+                avreg_hold = total_hold/num
+                for com in user.keys():
+                    if user[com] == []:
+                        user[com] = round(avreg)
+                    else:
+                        user[com] = round(sum(user[com])/len(user[com]))
+                for ke in user_hold.keys():
+                    if user_hold[ke] == []:
+                        user_hold[ke] = round(avreg_hold)
+                    else:
+                        user_hold[ke] = round(sum(user_hold[ke])/len(user_hold[ke]))
+                data.append([user, user_hold])
+    clean_data = []
+    for user in data:
+        clean_user = [0]
+        for com in combos:
+            clean_user.append(user[0][com])
+        for ke in pass_list:
+            clean_user.append(user[1][ke])
+        clean_data.append(clean_user)
+    return clean_data
+
+def get_hold_data(password):
+    pass_list = []
+    for i in range(len(password)-1):
+        pass_list.append(password[i])
     data = []
     for folder in DATA_FOLDERS:
         for file in os.listdir(folder):
             user = {}
             num = 0
             total = 0
-            for com in combos:
+            for com in pass_list:
                 user[com] = []
             user_file = open(folder+"/"+file, "r", encoding="utf-8")
             for line in user_file:
                 num += 1
                 clean = line.strip("\n").split(",")
-                total += int(clean[2])
-                if (clean[0], clean[1]) in combos:
-                    user[(clean[0], clean[1])].append(int(clean[2]))
+                total += int(clean[3])
+                if clean[1] in pass_list:
+                    user[clean[1]].append(int(clean[3]))
             user_file.close()
             if num != 0:
                 avreg = total/num
-                for com in user.keys():
-                    if user[com] == []:
-                        user[com] = round(avreg)
+                for ke in user.keys():
+                    if user[ke] == []:
+                        user[ke] = round(avreg)
                     else:
-                        user[com] = round(sum(user[com])/len(user[com]))
+                        user[ke] = round(sum(user[ke])/len(user[ke]))
                 data.append(user)
     clean_data = []
     for user in data:
         clean_user = [0]
-        for com in combos:
-            clean_user.append(user[com])
+        for ke in pass_list:
+            clean_user.append(user[ke])
         clean_data.append(clean_user)
     return clean_data
 
@@ -120,8 +176,8 @@ def get_weights(data, track=True):
     err = THRESH*2
     n = 0
     err0 = -1
-    while err > THRESH:
-        progress(2**abs(err-err0), 2**abs(err0-THRESH), suff=str(err))
+    while err > THRESH and n < TIMEOUT:
+        progress(2**abs(err-err0), 2**abs(err0-THRESH), suff=str(n)+": "+str(err))
         n += 1
         err = 0
         theta_new = []
@@ -143,13 +199,14 @@ def get_weights(data, track=True):
             # output of final
             a1 = sig(z1)
             # derivitive of error
-            err_d = abs(y-a1)
-            if err_d > 0.5:
-                if y == 1:
-                    err_d *= (1-P_HACKER)/n_user
-                else:
-                    err_d *= P_HACKER/n_hack
-                err += err_d
+            err_d = (y-a1)**2
+            # err_d = abs(y-a1)
+            # if err_d > 0.5:
+            if y == 1:
+                err_d *= (1-P_HACKER)/n_user
+            else:
+                err_d *= P_HACKER/n_hack
+            err += err_d
             dE_da1 = -(y-a1)
             # change of output per final input
             da1_dz1 = dsig(z1)
@@ -182,6 +239,8 @@ def get_weights(data, track=True):
             err0 = err
 
     progress(10, 10, done=True, suff=str(err))
+    if n == TIMEOUT:
+        print("Timed out.")
     return theta_old
 
 def sig(x):

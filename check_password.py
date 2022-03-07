@@ -13,7 +13,7 @@ def check(times):
     weights1 = f.readline().strip().split(",")
     weights2 = f.readline().strip().split(",")
     f.close()
-    L = len(password)-1
+    L = 2*len(password)-2
     w = []
     for i in range(len(weights1)):
         weights1[i] = float(weights1[i])
