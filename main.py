@@ -72,7 +72,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(0)
+            self.hold_times.append(-500)
 
     def time_password_check(self, event):
         if event.char not in ACCEPT:
@@ -128,7 +128,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(0)
+            self.hold_times.append(-500)
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_check)
         self.input.bind("<KeyRelease>", self.register_up)
@@ -149,7 +149,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(0)
+            self.hold_times.append(-500)
         self.time = time.time()
         self.output_txt.set("password: "+self.password+"\nplease enter password "+str(N_TRIALS)+" times \n0/"+str(N_TRIALS))
     
@@ -202,7 +202,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(0)
+            self.hold_times.append(-500)
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_create)
         self.input.bind("<KeyRelease>", self.register_up)
@@ -218,7 +218,7 @@ class App:
         self.press_times = []
         self.hold_times = []
         for i in range(len(self.password)-1):
-            self.hold_times.append(0)
+            self.hold_times.append(-500)
         self.input.bind("<Return>", self.empty_func)
         self.input.bind("<Key>", self.time_password_create)
         self.input.bind("<KeyRelease>", self.register_up)

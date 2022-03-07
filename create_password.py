@@ -14,6 +14,7 @@ STEP = 1
 THRESH = .001
 TIMEOUT = 1000
 P_HACKER = 0.4
+TRACKING = True
 
 def create(password, times):
 
@@ -177,7 +178,8 @@ def get_weights(data, track=True):
     n = 0
     err0 = -1
     while err > THRESH and n < TIMEOUT:
-        progress(2**abs(err-err0), 2**abs(err0-THRESH), suff=str(n)+": "+str(err))
+        if TRACKING:
+            progress(2**abs(err-err0), 2**abs(err0-THRESH), suff=str(n)+": "+str(err))
         n += 1
         err = 0
         theta_new = []
@@ -238,7 +240,8 @@ def get_weights(data, track=True):
         if err0==-1:
             err0 = err
 
-    progress(10, 10, done=True, suff=str(err))
+    if TRACKING:
+        progress(10, 10, done=True, suff=str(err))
     if n == TIMEOUT:
         print("Timed out.")
     return theta_old
