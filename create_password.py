@@ -5,14 +5,14 @@ import math
 import random
 
 
-DATA_FOLDERS = ["data/fixed_data", "data/free_data"]
+DATA_FOLDERS = ["data/fixed_data", "data/free_data", "data/computer_data"]
 USER_FILE = "user"
 
-N_MID = 2
-STEP = 5
-THRESH = .005
+N_MID = 3
+STEP = 10
+THRESH = .01
 TIMEOUT = 1000
-P_HACKER = 0.9
+P_HACKER = 0.4
 
 TRACKING = True
 
@@ -177,18 +177,18 @@ def get_weights(data, track=True):
             theta_old[layz+1][i,0] = (random.random()*2)-1
             # weight for others is in {-4/500n, 4/500n}
             for j in range(1,L+1):
-                theta_old[layz+1][i,j] = random.choice([-1,1])*8/L
+                theta_old[layz+1][i,j] = random.choice([-1,1])*4/L
     # final layer
     theta_old.append(np.zeros(L+1))
     theta_old[N_MID+1][0] = (random.random()*2)-1
     for i in range(1,L+1):
-        theta_old[N_MID+1][i] = random.choice([-1,1])*8/L
+        theta_old[N_MID+1][i] = random.choice([-1,1])*4/L
     err = THRESH*2
     n = 0
     err0 = -1
     while err > THRESH and n < TIMEOUT:
         if TRACKING:
-            progress(10**abs(err-err0), 10**abs(err0-THRESH), suff=str(n)+": "+str(err))
+            progress(10**abs(err-err0), 10**abs(err0-THRESH), suff=str(n)+": "+str(1-err))
         n += 1
         err = 0
         theta_new = []
@@ -218,7 +218,7 @@ def get_weights(data, track=True):
 
             # derivitive of error
             err_d = (y-a_fin)**2
-            # err_d = abs(y-a1)
+            # err_d = abs(y-a_fin)
             # if err_d > 0.5:
             if y == 1:
                 err_d *= (1-P_HACKER)/n_user

@@ -7,7 +7,7 @@ import check_password
 THRESHOLD = 0.5
 
 N_TRIALS = 10
-UNFILLED = 0
+UNFILLED = -1
 
 ACCEPT = "qwertyuioplkjhgfdsazxcv bnm"
 
@@ -96,9 +96,12 @@ class App:
         self.key_count += 1
         if self.key_count >= 2:
             self.times.append((time.time()-self.time)*1000)
-            self.time = time.time()
+        self.time = time.time()
         if self.key_count == len(self.password):
             self.input.bind("<KeyRelease>", self.empty_func)
+            for h in range(len(self.hold_times)):
+                if self.hold_times[h] < 0:
+                    self.hold_times[h] = 1000*(time.time()-self.press_times[h])
             for holder in self.hold_times[:-1]:
                 self.times.append(holder)
             prob_correct = check_password.check(self.times)
@@ -179,8 +182,11 @@ class App:
         self.key_count += 1
         if self.key_count >= 2:
             self.times.append((time.time()-self.time)*1000)
-            self.time = time.time()
+        self.time = time.time()
         if self.key_count == len(self.password):
+            for h in range(len(self.hold_times)):
+                if self.hold_times[h] < 0:
+                    self.hold_times[h] = 1000*(time.time()-self.press_times[h])
             self.input.bind("<Return>", self.enter_time)
             self.input.bind("<Key>", self.empty_func)
             self.input.bind("<KeyRelease>", self.empty_func)
@@ -214,6 +220,7 @@ class App:
         for holder in self.hold_times:
             self.times.append(holder)
         self.data.append(self.times)
+        print(self.times)
         self.times = []
         self.count += 1
         self.map_key_to_ind = {}

@@ -8,13 +8,25 @@ PREFIX = "fixed_"
 
 # second key is what is being held!!!!
 
+VALID = "qwertyuiopasdfghjklzxcvbnm "
+
 def is_valid(key):
-    for char in "qwertyuiopasdfghjklzxcvbnm ":
+    for char in VALID:
         if key==char:
             return True
     return False
 
 def main():
+
+    for t in range(1,101):
+        dump = open("data/computer_data/computer_"+str(t)+".txt", "w")
+        for i in VALID:
+            for j in VALID:
+                if i != " " and j != " ":
+                    dump.write(i+","+j+","+str(t)+","+str(t)+"\n")
+        dump.close()
+    return
+
     data = open(SOURCE, "r", encoding="utf-8")
 
     # get file format
