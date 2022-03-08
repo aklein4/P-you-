@@ -177,18 +177,18 @@ def get_weights(data, track=True):
             theta_old[layz+1][i,0] = (random.random()*2)-1
             # weight for others is in {-4/500n, 4/500n}
             for j in range(1,L+1):
-                theta_old[layz+1][i,j] = random.choice([-1,1])*4/L
+                theta_old[layz+1][i,j] = random.choice([-1,1])*8/L
     # final layer
     theta_old.append(np.zeros(L+1))
     theta_old[N_MID+1][0] = (random.random()*2)-1
     for i in range(1,L+1):
-        theta_old[N_MID+1][i] = random.choice([-1,1])*4/L
+        theta_old[N_MID+1][i] = random.choice([-1,1])*8/L
     err = THRESH*2
     n = 0
     err0 = -1
     while err > THRESH and n < TIMEOUT:
         if TRACKING:
-            progress(10**abs(err-err0), 10**abs(err0-THRESH), suff=str(n)+": "+str(1-err))
+            progress(abs(1-err), 1, suff=str(n)+": "+str(1-err))
         n += 1
         err = 0
         theta_new = []
