@@ -9,8 +9,8 @@ DATA_FOLDERS = ["data/fixed_data", "data/free_data", "data/computer_data"]
 USER_FILE = "user"
 
 N_MID = 3
-STEP = 10
-THRESH = .01
+STEP = 7
+THRESH = .001
 TIMEOUT = 1000
 P_HACKER = 0.4
 
@@ -21,12 +21,33 @@ def create(password, times):
     combos = get_combos(password)
     data = get_data(combos, password)
 
+    for us in range(len(times)):
+        divv = sum(times[us][0:len(password)])
+        for i in range(len(times[us])):
+            times[us][i] / divv
+
     for set in times:
         data.append([1]+set)
 
     weights = get_weights(data)
+
+    not_me = []
+    me = []
+    for set in data:
+        if set[0] == 1:
+            me.append(math.log10(feed(password, weights, set[1:])))
+        if set[0] == 0:
+            not_me.append(math.log10(feed(password, weights, set[1:])))
+
+    me_mean = np.average(me)
+    me_std = np.std(me)
+    not_mean = np.average(not_me)
+    not_std = np.std(not_me)
+
     f = open(USER_FILE+".txt", "w")
     f.write(password+"\n")
+    f.write(str(me_mean)+","+str(me_std)+"\n")
+    f.write(str(not_mean)+","+str(not_std)+"\n")
     for layz in range(N_MID+1):
         line = ""
         for row in weights[layz]:
@@ -37,7 +58,6 @@ def create(password, times):
     line = ""
     for x in weights[N_MID+1]:
         line += ","+str(x)
-    line += "\n"
     f.write(line[1:])
     f.close()
 
@@ -130,6 +150,9 @@ def get_hold_data(password):
                         user[ke] = round(avreg)
                     else:
                         user[ke] = round(sum(user[ke])/len(user[ke]))
+                divv = sum(user[0:len(password)])
+                for i in range(len(user)):
+                    user[i] / divv
                 data.append(user)
     clean_data = []
     for user in data:
@@ -188,7 +211,7 @@ def get_weights(data, track=True):
     err0 = -1
     while err > THRESH and n < TIMEOUT:
         if TRACKING:
-            progress(abs(1-err), 1, suff=str(n)+": "+str(1-err))
+            progress(abs(1-err)**10, 1, suff=str(n)+": "+str(1-err))
         n += 1
         err = 0
         theta_new = []
@@ -221,9 +244,9 @@ def get_weights(data, track=True):
             # err_d = abs(y-a_fin)
             # if err_d > 0.5:
             if y == 1:
-                err_d *= (1-P_HACKER)/n_user
+                err_d *= 1/(n_user+n_hack)
             else:
-                err_d *= P_HACKER/n_hack
+                err_d *= 1/(n_hack+n_user)
             err += err_d
             dE_dafin = -(y-a_fin)
 
@@ -232,9 +255,9 @@ def get_weights(data, track=True):
             # how much the final input should change
             delta_fin = dE_dafin*dafin_dzfin*STEP
             if y == 1:
-                delta_fin *= (1-P_HACKER)/n_user
+                delta_fin *= 1/(n_user+n_hack)
             else:
-                delta_fin *= P_HACKER/n_hack
+                delta_fin *= 1/(n_hack+n_user)
             # how the final input weights should change
             grad[N_MID+1] = delta_fin*a[N_MID]/np.linalg.norm(a[N_MID])
 
@@ -273,6 +296,29 @@ def get_weights(data, track=True):
     if n == TIMEOUT:
         print("Timed out.")
     return theta_old
+
+def feed(password, weights, t):
+    L = 2*len(password)-2
+    w = []
+    for layz in range(0,len(weights)-1):
+        curr = np.array(weights[layz])
+        w.append(curr.reshape(L, L+1))
+    w.append(np.array(weights[-1]))
+    a = []
+    z = [np.matmul(w[0], t)]
+    for layz in range(len(w)-1):
+        a.append(np.zeros(L+1))
+        a[layz][0] = 1
+        for i in range(1,L+1):
+            a[layz][i] = sig(z[layz][i-1])
+        # input to next
+        if(layz <= len(w)-1):
+            z.append(np.matmul(w[layz+1], a[layz]))
+
+    # output of final
+    a_fin = sig(z[len(w)-1])
+
+    return a_fin
 
 def sig(x):
     if x > 50:

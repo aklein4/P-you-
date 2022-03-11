@@ -13,7 +13,13 @@ ACCEPT = "qwertyuioplkjhgfdsazxcv bnm"
 
 class App:
 
-    def __init__(self):
+    def __init__(self, collecting=False):
+        self.collecting = collecting
+        self.test_count = 0
+        self.name = ""
+        if self.collecting:
+            self.name = input("enter name: ")
+
         # set up window
         self.window = Tk()
         self.window.geometry("300x300")
@@ -104,10 +110,14 @@ class App:
                     self.hold_times[h] = 1000*(time.time()-self.press_times[h])
             for holder in self.hold_times[:-1]:
                 self.times.append(holder)
+            
+            # if self.collecting:
+            #    f = open(self.password+"_")
+
             prob_correct = check_password.check(self.times)
 
             if prob_correct > THRESHOLD:
-                self.input.bind("<Return>", self.cancel_enter)
+                self.input.bind("<Return>", self.restart_trying)
                 self.input.bind("<Key>", self.empty_func)
                 self.input.bind("<KeyRelease>", self.empty_func)
                 self.input_txt.set(self.input_txt.get()+event.char)
@@ -220,7 +230,6 @@ class App:
         for holder in self.hold_times:
             self.times.append(holder)
         self.data.append(self.times)
-        print(self.times)
         self.times = []
         self.count += 1
         self.map_key_to_ind = {}

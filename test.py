@@ -5,32 +5,152 @@ import numpy as np
 import random
 from matplotlib import pyplot
 import math
+import os
+import scipy.stats
 
-N_TESTS = 1000
-CREATE = False
+N_TESTS = 10000
+CREATE = True
+P_HACKER = 0.4
 
 def main_test():
-    test_data = ADAMKLEIN
-    if CREATE:
-        create_password.create(test_data["password"], test_data["data"])
+
+    f = open("tests/user_tests/adam_klein.txt", "r")
+    password = f.readline().strip("\n")
+
+    weights = []
+    for line in f:
+        weights.append(line.strip().split(","))
+    f.close()
+    for i in range(len(weights)):
+        for j in range(len(weights[i])):
+            weights[i][j] = float(weights[i][j])
+
+    combos = create_password.get_combos(password)
+    data = create_password.get_data(combos, password)
+
+    not_me = []
+
+    for set in data:
+        not_me.append(math.log10(create_password.feed(password, weights, set)))
+
+    not_mean = np.average(not_me)
+    not_std = np.std(not_me)
+
+    me = []
+    f = open("my_tests.txt", "r")
+    for line in f:
+        me.append(math.log10(float(line.strip().split(",")[1])))
+    f.close()
+
+    me_mean = np.average(me)
+    me_std = np.std(me)
+
+    x = np.linspace(-3, 0, 100)
+    y_me = scipy.stats.norm.pdf(x, me_mean, me_std)
+    y_not = scipy.stats.norm.pdf(x, not_mean, not_std)
+    y_mixed = y_me*(1-P_HACKER)/(y_me*(1-P_HACKER)+y_not*P_HACKER)
+    y_mixed2 = y_me*(1-.1)/(y_me*(1-.1)+y_not*.1)
+    y_mixed3 = y_me*(1-.9)/(y_me*(1-.9)+y_not*.9)
+    pyplot.plot(x, scipy.stats.norm.pdf(x, me_mean, me_std), 'Green')
+    pyplot.plot(x, scipy.stats.norm.pdf(x, not_mean, not_std), 'Red')
+    pyplot.plot(x, y_mixed, 'Blue')
+    pyplot.plot(x, y_mixed2, 'Blue')
+    pyplot.plot(x, y_mixed3, 'Blue')
+    pyplot.title("Example Normal Curves and Bayes Output")
+    pyplot.show()
+    return
+
+    not_dists = []
+    for file in os.listdir("tests/input_data/adam_klein_tests"):
+        dis = []
+        f = open("tests/input_data/adam_klein_tests/"+file, "r")
+        for line in f:
+            val = math.log10(float(line.strip().split(",")[1]))
+            dis.append(
+                scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)/(
+                    scipy.stats.norm.pdf(val,loc=not_mean,scale=not_std)*P_HACKER+scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)
+                    )
+                )
+        f.close()
+        not_dists.append(dis)
+
+    me_dist = []
+    for val in me:
+        me_dist.append(
+            scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)/(
+                scipy.stats.norm.pdf(val,loc=not_mean,scale=not_std)*P_HACKER+scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)
+                )
+            )
 
     fake_outcomes = []
     for n in range(N_TESTS):
         test_times = []
-        for i in range(len(test_data["password"])-1):
-            test_times.append(random.randint(100,300))
-        for i in range(len(test_data["password"])-1):
+        for i in range(len(password)-1):
+            test_times.append(random.randint(50,300))
+        for i in range(len(password)-1):
             test_times.append(random.randint(50,150))
-        fake_outcomes.append(math.log10(check_password.check(test_times)))
+        divv = sum(test_times[0:len(password)])
+        for i in range(len(test_times)):
+            test_times[i] / divv
+        test_times.insert(0,1)
+        val = math.log10(check_password.feed(password, weights, test_times))
+        fake_outcomes.append(
+            scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)/(
+                scipy.stats.norm.pdf(val,loc=not_mean,scale=not_std)*P_HACKER+scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)
+                )
+            )
 
-    true_outcomes = []
-    for set in test_data["tests"]:
-        true_outcomes.append(math.log10(check_password.check(set)))
+    fake_outcomes2 = []
+    for n in range(N_TESTS):
+        test_times = []
+        for i in range(len(password)-1):
+            test_times.append(random.randint(50,500))
+        for i in range(len(password)-1):
+            test_times.append(random.randint(50,500))
+        divv = sum(test_times[0:len(password)])
+        for i in range(len(test_times)):
+            test_times[i] / divv
+        test_times.insert(0,1)
+        val = math.log10(check_password.feed(password, weights, test_times))
+        fake_outcomes2.append(
+            scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)/(
+                scipy.stats.norm.pdf(val,loc=not_mean,scale=not_std)*P_HACKER+scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)
+                )
+            )
 
-    pyplot.hist([fake_outcomes, true_outcomes], bins=100, range=(-3,0), density=True, rwidth=1)
-    pyplot.axvline(math.log10(0.5), color='k', linestyle='dashed', linewidth=1)
+    fig, ((ax1, ax2), (ax3, ax4),(ax5, ax6),(ax7, ax8)) = pyplot.subplots(4, 2)
+    fig.suptitle("P(You) Testing Outcomes")
+    ax1.hist(me_dist, bins=25, range=(0,1), density=True, rwidth=1, color='Green')
+    ax2.hist(not_dists[0], bins=25, range=(0,1), density=True, rwidth=1)
+    ax3.hist(not_dists[1], bins=25, range=(0,1), density=True, rwidth=1)
+    ax4.hist(not_dists[2], bins=25, range=(0,1), density=True, rwidth=1)
+    ax5.hist(not_dists[3], bins=25, range=(0,1), density=True, rwidth=1)
+    ax6.hist(not_dists[4], bins=25, range=(0,1), density=True, rwidth=1)
+    ax7.hist(fake_outcomes, bins=25, range=(0,1), density=True, rwidth=1, color = 'Red')
+    ax8.hist(fake_outcomes2, bins=25, range=(0,1), density=True, rwidth=1, color='Red')
     pyplot.show()
-    return
+
+    # test_data = ADAMKLEIN
+    # if CREATE:
+    #     create_password.create(test_data["password"], test_data["data"])
+
+    # fake_outcomes = []
+    # for n in range(N_TESTS):
+    #     test_times = []
+    #     for i in range(len(test_data["password"])-1):
+    #         test_times.append(random.randint(100,300))
+    #     for i in range(len(test_data["password"])-1):
+    #         test_times.append(random.randint(50,150))
+    #     fake_outcomes.append(math.log10(check_password.check(test_times)))
+
+    # true_outcomes = []
+    # for set in test_data["tests"]:
+    #     true_outcomes.append(math.log10(check_password.check(set)))
+
+    # pyplot.hist([fake_outcomes, true_outcomes], bins=100, range=(-3,0), density=True, rwidth=1)
+    # pyplot.axvline(math.log10(0.5), color='k', linestyle='dashed', linewidth=1)
+    # pyplot.show()
+    # return
 
 ADAMKLEIN = {
     "password": "adamklein",
