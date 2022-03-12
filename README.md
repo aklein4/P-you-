@@ -22,7 +22,7 @@ Based on 50 user tests (green), the program identifies a correct user with 95 pe
 
 Based on 2000 tests with randomly generated inputs (orange, each graph is different random range), the program rejects randomly generated inputs with 95 percent accuracy.
 
-Histograms of different user probabilities, with x axis representing P(User|R=r), where r is neural net prediction.
+Histograms of different user probabilities, with x axis representing P(User|R=r) where r is neural net prediction:
 
 ![testing graphic](https://github.com/aklein4/P-you-/blob/master/images/P-you-testing-outcomes.png)
 
