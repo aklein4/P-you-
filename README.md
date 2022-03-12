@@ -14,6 +14,12 @@ In order to increase accruacy, the program also implements a prior belief that t
 
 ![Bayes process graphic](https://github.com/aklein4/P-you-/blob/master/images/bayes-prior-graphic.jpeg)
 
+With prior belief of correct user as 0.6 and an acceptance threshold of 0.5:
+Based on 50 non-user human tests (blue - each graph is different person), the program identifies non-user humans with 88 percent accuracy.
+Based on 50 user tests (green), the program identifies a correct user with 95 percent accuracy.
+Based on 2000 tests with randomly generated inputs (orange, each graph is different random range), the program rejects randomly generated inputs with 95 percent accuracy.
+
+![Bayes process graphic](https://github.com/aklein4/P-you-/blob/master/images/P-you-testing-outcomes.jpeg)
 
 **Training data:**
 Maalej, A. (2020, November 15). EmoSurv: A typing biometric (Keystroke Dynamics) dataset with emotion labels created using computer keyboards. IEEE DataPort.
