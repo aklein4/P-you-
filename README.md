@@ -12,7 +12,7 @@ In order to increase accuracy, the program also implements a prior belief that t
 2. Use Bayes theorem with total probability to find P(User|R=log(r)) with r as the network outcome, and f(R|User) being the normal distributions generated in the previous steps.
 3. If the Bayes output reaches a defined threshold probability, then the user passes.
 
-Interestingly, if P(R=r|User) >> P(R=r|Non-User), this final function resembles another sigmoid function. This filter is particularly useful for dynamically tuning the program based on continued use/historical data without needing to update the neural network.
+Interestingly, if P(R=r|User) >> P(R=r|Non-User), this final function resembles another sigmoid function. This filter is particularly useful for dynamically tuning the program based on continued use/historical data without needing to update the neural network. Also, in real world 2-factor authentification applications, this could be used to tighten the requirements if there is reason to believe the user is a hacker (ex. logging in on a new device).
 
 ![Bayes process graphic](https://github.com/aklein4/P-you-/blob/master/images/bayes-prior-graphic.jpeg)
 
@@ -27,6 +27,8 @@ Based on 2000 tests with randomly generated inputs (orange, each graph is differ
 Histograms of different user probabilities, with x axis representing P(User|R=r) where r is neural net prediction:
 
 ![testing graphic](https://github.com/aklein4/P-you-/blob/master/images/P-you-testing-outcomes.png)
+
+Another interesting outcome from this testing is that one person was continually able to pass the test after I trained the data on myself (unfortunately, much of this was before I started recording). This leads me to believe that some people have naturally similar typing habits, and programs like this could be used to identify such similarities.
 
 **Training data:**
 Maalej, A. (2020, November 15). EmoSurv: A typing biometric (Keystroke Dynamics) dataset with emotion labels created using computer keyboards. IEEE DataPort.
