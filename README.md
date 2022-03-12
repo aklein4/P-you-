@@ -16,7 +16,7 @@ Interestingly, if P(R=r|User) >> P(R=r|Non-User), this final function resembles 
 
 ![Bayes process graphic](https://github.com/aklein4/P-you-/blob/master/images/bayes-prior-graphic.jpeg)
 
-With test password "adam klein" (18 datwa points), 5 layer neural network, prior belief of correct user as 0.6, and an acceptance probability threshold of 0.5:
+With test password "adam klein" (18 data points), 5 layer neural network, prior belief of correct user as 0.6, and an acceptance probability threshold of 0.5:
 
 Based on 50 non-user human tests (blue - each graph is different person), the program identifies non-user humans with 88 percent accuracy.
 
