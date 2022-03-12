@@ -12,7 +12,7 @@ In order to increase accruacy, the program also implements a prior belief that t
 2. Use Bayes theorem with total probability to find P(User|R=log(r)) with R as the network outcome, and f(R|User) being the normal distributions generated in the previous steps.
 3. If the Bayes output reaches a defined threshold probability, then the user passes:
 
-![Bayes process graphic](https://github.com/aklein4/P-you-/blob/[branch]/bayes-prior-graphic.jpg)
+![Bayes process graphic](https://github.com/aklein4/P-you-/images/bayes-prior-graphic.jpg)
 
 
 **Training data:**
