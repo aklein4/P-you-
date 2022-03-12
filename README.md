@@ -8,9 +8,9 @@ The algorithm is implemented through a deep-learning neural network of arbitrary
 
 In order to increase accuracy, the program also implements a prior belief that the user is the correct person. This is done in 3 stages:
 
-1. Test the network on (preffereably different from training) data, and generate normal distributions for user and non-user test outcomes. (The distribution is done on the log of the network outcome to fix scaling issues).
-2. Use Bayes theorem with total probability to find P(User|R=log(r)) with R as the network outcome, and f(R|User) being the normal distributions generated in the previous steps.
-3. If the Bayes output reaches a defined threshold probability, then the user passes:
+1. Test the network on (preffereably different from training) data, and generate normal distributions for P(neural net prediction | user)and P(neural network prediction | non-user) test outcomes. (The distribution is done on the log of the network output to fix scaling issues).
+2. Use Bayes theorem with total probability to find P(User|R=log(r)) with r as the network outcome, and f(R|User) being the normal distributions generated in the previous steps.
+3. If the Bayes output reaches a defined threshold probability, then the user passes.
 
 Interestingly, if P(R=r|User) >> P(R=r|Non-User), this final function resembles another sigmoid function. This filter is particularly useful for dynamically tuning the program based on continued use/historical data without needing to update the neural network.
 
