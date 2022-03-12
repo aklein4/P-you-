@@ -19,7 +19,7 @@ Based on 50 non-user human tests (blue - each graph is different person), the pr
 Based on 50 user tests (green), the program identifies a correct user with 95 percent accuracy.
 Based on 2000 tests with randomly generated inputs (orange, each graph is different random range), the program rejects randomly generated inputs with 95 percent accuracy.
 
-![testing graphic](https://github.com/aklein4/P-you-/blob/master/images/P-you-testing-outcomes.jpeg)
+![testing graphic](https://github.com/aklein4/P-you-/blob/master/images/P-you-testing-outcomes.png)
 
 **Training data:**
 Maalej, A. (2020, November 15). EmoSurv: A typing biometric (Keystroke Dynamics) dataset with emotion labels created using computer keyboards. IEEE DataPort.
