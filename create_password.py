@@ -2,32 +2,62 @@ import numpy
 import os
 import numpy as np
 import math
-import sys
-
-from sklearn.manifold import trustworthiness
+import random
 
 
-DATA_FOLDERS = ["data/fixed_data", "data/free_data"]
-
+DATA_FOLDERS = ["data/fixed_data", "data/free_data", "data/computer_data"]
 USER_FILE = "user"
-STEP = 0.0001
-THRESH = STEP/10
+
+N_MID = 3
+STEP = 7
+THRESH = .001
 TIMEOUT = 1000
 P_HACKER = 0.4
+
+TRACKING = True
 
 def create(password, times):
 
     combos = get_combos(password)
-    data = get_data(combos)
+    data = get_data(combos, password)
+
+    for us in range(len(times)):
+        divv = sum(times[us][0:len(password)])
+        for i in range(len(times[us])):
+            times[us][i] / divv
+
     for set in times:
         data.append([1]+set)
+
     weights = get_weights(data)
+
+    not_me = []
+    me = []
+    for set in data:
+        if set[0] == 1:
+            me.append(math.log10(feed(password, weights, set[1:])))
+        if set[0] == 0:
+            not_me.append(math.log10(feed(password, weights, set[1:])))
+
+    me_mean = np.average(me)
+    me_std = np.std(me)
+    not_mean = np.average(not_me)
+    not_std = np.std(not_me)
+
     f = open(USER_FILE+".txt", "w")
     f.write(password+"\n")
+    f.write(str(me_mean)+","+str(me_std)+"\n")
+    f.write(str(not_mean)+","+str(not_std)+"\n")
+    for layz in range(N_MID+1):
+        line = ""
+        for row in weights[layz]:
+            for x in row:
+                line += ","+str(x)
+        line += "\n"
+        f.write(line[1:])
     line = ""
-    for w in weights:
-        line += ","+str(w)
-    line += "\n"
+    for x in weights[N_MID+1]:
+        line += ","+str(x)
     f.write(line[1:])
     f.close()
 
@@ -42,36 +72,93 @@ def create(password, times):
     #     f.write(line[1:])
     # f.close()
 
-def get_data(combos):
+def get_data(combos, password):
+    data = []
+    pass_list = []
+    for i in range(len(password)-1):
+        pass_list.append(password[i])
+    for folder in DATA_FOLDERS:
+        for file in os.listdir(folder):
+            user = {}
+            user_hold = {}
+            num = 0
+            total = 0
+            total_hold = 0
+            for com in combos:
+                user[com] = []
+            for ke in pass_list:
+                user_hold[ke] = []
+            user_file = open(folder+"/"+file, "r", encoding="utf-8")
+            for line in user_file:
+                num += 1
+                clean = line.strip("\n").split(",")
+                total += int(clean[2])
+                total_hold += int(clean[3])
+                if (clean[0], clean[1]) in combos:
+                    user[(clean[0], clean[1])].append(int(clean[2]))
+                if clean[1] in pass_list:
+                    user_hold[clean[1]].append(int(clean[3]))
+            user_file.close()
+            if num != 0:
+                avreg = total/num
+                avreg_hold = total_hold/num
+                for com in user.keys():
+                    if user[com] == []:
+                        user[com] = round(avreg)
+                    else:
+                        user[com] = round(sum(user[com])/len(user[com]))
+                for ke in user_hold.keys():
+                    if user_hold[ke] == []:
+                        user_hold[ke] = round(avreg_hold)
+                    else:
+                        user_hold[ke] = round(sum(user_hold[ke])/len(user_hold[ke]))
+                data.append([user, user_hold])
+    clean_data = []
+    for user in data:
+        clean_user = [0]
+        for com in combos:
+            clean_user.append(user[0][com])
+        for ke in pass_list:
+            clean_user.append(user[1][ke])
+        clean_data.append(clean_user)
+    return clean_data
+
+def get_hold_data(password):
+    pass_list = []
+    for i in range(len(password)-1):
+        pass_list.append(password[i])
     data = []
     for folder in DATA_FOLDERS:
         for file in os.listdir(folder):
             user = {}
             num = 0
             total = 0
-            for com in combos:
+            for com in pass_list:
                 user[com] = []
             user_file = open(folder+"/"+file, "r", encoding="utf-8")
             for line in user_file:
                 num += 1
                 clean = line.strip("\n").split(",")
-                total += int(clean[2])
-                if (clean[0], clean[1]) in combos:
-                    user[(clean[0], clean[1])].append(int(clean[2]))
+                total += int(clean[3])
+                if clean[1] in pass_list:
+                    user[clean[1]].append(int(clean[3]))
             user_file.close()
             if num != 0:
                 avreg = total/num
-                for com in user.keys():
-                    if user[com] == []:
-                        user[com] = round(avreg)
+                for ke in user.keys():
+                    if user[ke] == []:
+                        user[ke] = round(avreg)
                     else:
-                        user[com] = round(sum(user[com])/len(user[com]))
+                        user[ke] = round(sum(user[ke])/len(user[ke]))
+                divv = sum(user[0:len(password)])
+                for i in range(len(user)):
+                    user[i] / divv
                 data.append(user)
     clean_data = []
     for user in data:
         clean_user = [0]
-        for com in combos:
-            clean_user.append(user[com])
+        for ke in pass_list:
+            clean_user.append(user[ke])
         clean_data.append(clean_user)
     return clean_data
 
@@ -82,9 +169,11 @@ def get_combos(password):
     return combos
 
 def get_weights(data, track=True):
-    L = len(data[0])
+
+    # prepare data
+    L = len(data[0])-1
     for i in range(len(data)):
-        data[i].append(1)
+        data[i].insert(1,1)
     n_hack = 0
     n_user = 0
     for user in data:
@@ -92,40 +181,154 @@ def get_weights(data, track=True):
             n_user += 1
         else:
             n_hack += 1
-    theta_old = np.full(L, .01)
-    dist = THRESH*2
-    dist0 = THRESH*2
-    t = 0
-    while dist > THRESH and t < TIMEOUT:
-        if track:
-            progress(dist0/dist, dist0/THRESH, suff="dist: "+str(dist))
-        theta_new = theta_old.copy()
-        for i in range(len(data)):
-            y = data[i][0]
-            x = np.array(data[i][1:])
-            delta = STEP*(y-sigmoid(np.dot(theta_old, x)))*x
+
+    # Get initial weights
+    theta_old = []
+    # first layer 0
+    theta_old.append(np.zeros((L,L+1)))
+    for i in range(0,L):
+        # 1 weight is on (-1,1)
+        theta_old[0][i,0] = (random.random()*2)-1
+        # weight for others is in {-4/500n, 4/500n}
+        for j in range(1,L+1):
+            theta_old[0][i,j] = random.choice([-1,1])*4/(500*L)
+    # inter layers
+    for layz in range(N_MID):
+        theta_old.append(np.zeros((L,L+1)))
+        for i in range(0,L):
+            # 1 weight is on (-1,1)
+            theta_old[layz+1][i,0] = (random.random()*2)-1
+            # weight for others is in {-4/500n, 4/500n}
+            for j in range(1,L+1):
+                theta_old[layz+1][i,j] = random.choice([-1,1])*8/L
+    # final layer
+    theta_old.append(np.zeros(L+1))
+    theta_old[N_MID+1][0] = (random.random()*2)-1
+    for i in range(1,L+1):
+        theta_old[N_MID+1][i] = random.choice([-1,1])*8/L
+    err = THRESH*2
+    n = 0
+    err0 = -1
+    while err > THRESH and n < TIMEOUT:
+        if TRACKING:
+            progress(abs(1-err)**10, 1, suff=str(n)+": "+str(1-err))
+        n += 1
+        err = 0
+        theta_new = []
+        for layz in range(len(theta_old)):
+            theta_new.append(theta_old[layz].copy())
+
+        for pair in data:
+            # inputs
+            y = pair[0]
+            x = np.array(pair[1:])
+            a = []
+            z = [numpy.matmul(theta_old[0], x)]
+            grad = []
+            for g in range(len(theta_old)):
+                grad.append(0)
+            for layz in range(N_MID+1):
+                a.append(np.zeros(L+1))
+                a[layz][0] = 1
+                for i in range(1,L+1):
+                    a[layz][i] = sig(z[layz][i-1])
+                # input to next
+                if(layz <= N_MID):
+                    z.append(numpy.matmul(theta_old[layz+1], a[layz]))
+
+            # output of final
+            a_fin = sig(z[N_MID+1])
+
+            # derivitive of error
+            err_d = (y-a_fin)**2
+            # err_d = abs(y-a_fin)
+            # if err_d > 0.5:
             if y == 1:
-                delta /= n_user
+                err_d *= 1/(n_user+n_hack)
             else:
-                delta *= P_HACKER/n_hack
-            theta_new += delta
-        dist = np.linalg.norm(theta_new-theta_old)
-        if dist0 == THRESH*2:
-            dist0 = dist
-        theta_old = theta_new.copy()
-        t += 1
-    if track:
-        progress(10, 10, done=True, suff="dist: "+str(dist))
-    if t > TIMEOUT:
+                err_d *= 1/(n_hack+n_user)
+            err += err_d
+            dE_dafin = -(y-a_fin)
+
+            # change of output per final input
+            dafin_dzfin = dsig(z[N_MID+1])
+            # how much the final input should change
+            delta_fin = dE_dafin*dafin_dzfin*STEP
+            if y == 1:
+                delta_fin *= 1/(n_user+n_hack)
+            else:
+                delta_fin *= 1/(n_hack+n_user)
+            # how the final input weights should change
+            grad[N_MID+1] = delta_fin*a[N_MID]/np.linalg.norm(a[N_MID])
+
+            delta_curr = delta_fin
+            for layz in range(N_MID, -1, -1):
+                # change in final input  from first output
+                if layz == N_MID:
+                    dzup_dame = theta_old[layz+1][1:]
+                else:
+                    dzup_dame = theta_old[layz+1][:,1:]
+                # change in first output from first input
+                dame_dzme = np.zeros(L)
+                for i in range(L):
+                    dame_dzme[i] = dsig(z[layz][i])
+                # how much each node input needs to change
+                if layz==N_MID:
+                    delta_curr = delta_curr*np.multiply(dame_dzme, np.transpose(dzup_dame))
+                else:
+                    delta_curr = np.multiply(delta_curr,np.matmul(dzup_dame, dame_dzme))
+                # how much first inputs need to change
+                if layz > 0:
+                    grad[layz] = np.tensordot(delta_curr, a[layz-1], axes=0)/np.linalg.norm(a[layz-1])
+                else:
+                    grad[layz] = np.tensordot(delta_curr, x, axes=0)/np.linalg.norm(x)
+
+            for layz in range(len(grad)):
+                theta_new[layz] -= grad[layz]
+
+        for layz in range(len(theta_old)):
+                theta_old[layz] = theta_new[layz].copy()
+        if err0==-1:
+            err0 = err
+
+    if TRACKING:
+        progress(10, 10, done=True, suff=str(err))
+    if n == TIMEOUT:
         print("Timed out.")
     return theta_old
 
-def sigmoid(x):
-    if x < -20:
-        return 0
-    if x > 20:
+def feed(password, weights, t):
+    L = 2*len(password)-2
+    w = []
+    for layz in range(0,len(weights)-1):
+        curr = np.array(weights[layz])
+        w.append(curr.reshape(L, L+1))
+    w.append(np.array(weights[-1]))
+    a = []
+    z = [np.matmul(w[0], t)]
+    for layz in range(len(w)-1):
+        a.append(np.zeros(L+1))
+        a[layz][0] = 1
+        for i in range(1,L+1):
+            a[layz][i] = sig(z[layz][i-1])
+        # input to next
+        if(layz <= len(w)-1):
+            z.append(np.matmul(w[layz+1], a[layz]))
+
+    # output of final
+    a_fin = sig(z[len(w)-1])
+
+    return a_fin
+
+def sig(x):
+    if x > 50:
         return 1
+    if x < -50:
+        return 0
     return 1 / (1 + math.exp(-x))
+
+def dsig(x):
+    return sig(x)*(1-sig(x))
 
 def progress(count, total, bar_len=25, done=False, suff=""):
     suff = str(suff)
@@ -141,3 +344,89 @@ def progress(count, total, bar_len=25, done=False, suff=""):
         print(bar, suff, end="\r")
         return
     print(bar)
+
+# L = 3-1
+# pair = [1,1,200,300]
+# # Get initial weights
+# theta_old = []
+# # layer 0
+# theta_old.append(np.zeros((L,L+1)))
+# for i in range(0,L):
+#     # 1 weight is on (-1,1)
+#     theta_old[0][i,0] = (random.random()*2)-1
+#     # weight for others is in {-4/500n, 4/500n}
+#     for j in range(1,L+1):
+#         theta_old[0][i,j] = random.choice([-1,1])*4/(500*L)
+# # layer 2
+# theta_old.append(np.zeros(L+1))
+# theta_old[1][0] = (random.random()*2)-1
+# for i in range(1,L+1):
+#     theta_old[1][i] = random.choice([-1,1])*8/L
+
+# y = pair[0]
+# x = np.array(pair[1:])
+# z0 = numpy.matmul(theta_old[0], x)
+
+# a0 = np.zeros(L+1)
+# a0[0] = 1
+# for i in range(1,L+1):
+#     a0[i] = sig(z0[i-1])
+# z1 = numpy.matmul(theta_old[1], a0)
+# # output of final
+# a1 = sig(z1)
+# # derivitive of error
+# dE_da1 = -(y-a1)
+# # change of output per final input
+# da1_dz1 = dsig(z1)
+# # how much the final input should change
+# delta1 = dE_da1*da1_dz1*STEP
+# if y == 1:
+#     delta1 /= 10
+# else:
+#     delta1 *= P_HACKER/100
+# # how the final input weights should change
+# grad1 = delta1*a0
+
+# # change in final input  from first output
+# dz1_da0 = theta_old[1][1:]
+# # change in first output from first input
+# da0_dz0 = np.zeros(L)
+# for i in range(L):
+#     da0_dz0[i] = dsig(z0[i])
+# # how much each node input needs to change
+# delta0 = delta1*np.multiply(da0_dz0, np.transpose(dz1_da0))
+# print(delta0)
+# # how much first inputs need to change
+# grad0 = np.tensordot(delta0, x, axes=0)
+# print(grad0)
+
+
+
+
+# theta_old = [np.array([[1,2],[3,4]]), np.array([5,6])]
+# L = 2
+# y = 1
+# x = np.array([1,2])
+# z0 = numpy.matmul(theta_old[0], x)
+# a0 = np.zeros(L)
+# for i in range(L):
+#     a0[i] = sig(z0[i])
+# z1 = numpy.matmul(theta_old[1], a0)
+# a1 = sig(z1)
+# dE_da1 = -(y-a1)
+# da1_dz1 = dsig(z1)
+# delta1 = dE_da1*da1_dz1
+# grad1 = delta1*a0
+
+# dz1_da0 = theta_old[1]
+# da0_dz0 = np.zeros(L)
+# for i in range(L):
+#     da0_dz0[i] = dsig(z0[i])
+# delta0 = delta1*np.multiply(da0_dz0, np.transpose(dz1_da0))
+# grad0 = np.tensordot(delta0, x, axes=0)
+
+# if y == 1:
+#     d1 /= n_user
+# else:
+#     d1 *= P_HACKER/n_hack
+# d0 = np.multiply(dsig0, theta_old[0])*d1
