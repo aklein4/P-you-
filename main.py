@@ -32,7 +32,7 @@ class App:
 
         # set up output box
         self.output_txt = StringVar()
-        self.output_txt.set("Welcome to passw0rd.")
+        self.output_txt.set("Welcome to P(you).")
         self.output = Label(
             self.window, textvariable=self.output_txt,
             bg='white', anchor="nw", height=8, width=6, justify=LEFT
