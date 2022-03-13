@@ -1,6 +1,6 @@
 # P(you)
 
-![explaination video](https://github.com/aklein4/P-you-/blob/master/PYOU-VIDEO.mp4)
+https://github.com/aklein4/P-you-/blob/master/PYOU-VIDEO.mp4
 
 Add a new dimension to password identification: **time**
 
