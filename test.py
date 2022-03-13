@@ -54,9 +54,13 @@ def main_test():
     pyplot.plot(x, scipy.stats.norm.pdf(x, me_mean, me_std), 'Green')
     pyplot.plot(x, scipy.stats.norm.pdf(x, not_mean, not_std), 'Red')
     pyplot.plot(x, y_mixed, 'Blue')
-    pyplot.plot(x, y_mixed2, 'Blue')
-    pyplot.plot(x, y_mixed3, 'Blue')
+    pyplot.plot(x, y_mixed2, 'Purple')
+    pyplot.plot(x, y_mixed3, 'Black')
+    pyplot.axhline(color='k', linestyle='--', y=0.5, label='axhline - full height')
     pyplot.title("Example Normal Curves and Bayes Output")
+    pyplot.xlabel("r = log of network output")
+    pyplot.ylabel("probability / PDF")
+    pyplot.legend(["P(R=r|User)", "P(R=r|Non-User)", "P(User|R=r): p(user) = 0.6", "P(User|R=r): p(user) = 0.9", "P(User|R=r): p(user) = 0.1", "0.5 Pass Threshold"], loc="upper left", prop={'size': 8})
     pyplot.show()
     return
 
@@ -74,6 +78,15 @@ def main_test():
         f.close()
         not_dists.append(dis)
 
+    not_passes = 0
+    not_tot = 0
+    for user in not_dists:
+        for test in user:
+            if test > 0.5:
+                not_passes +=1
+            not_tot += 1
+    print(not_passes/not_tot)
+
     me_dist = []
     for val in me:
         me_dist.append(
@@ -81,6 +94,14 @@ def main_test():
                 scipy.stats.norm.pdf(val,loc=not_mean,scale=not_std)*P_HACKER+scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)
                 )
             )
+
+    me_passes = 0
+    me_tot = 0
+    for test in me_dist:
+        if test > 0.5:
+            me_passes +=1
+        me_tot += 1
+    print(me_passes/me_tot)
 
     fake_outcomes = []
     for n in range(N_TESTS):
@@ -100,6 +121,14 @@ def main_test():
                 )
             )
 
+    fake_passes = 0
+    fake_tot = 0
+    for test in fake_outcomes:
+        if test > 0.5:
+            fake_passes +=1
+        fake_tot += 1
+    print(fake_passes/fake_tot)
+
     fake_outcomes2 = []
     for n in range(N_TESTS):
         test_times = []
@@ -117,6 +146,14 @@ def main_test():
                 scipy.stats.norm.pdf(val,loc=not_mean,scale=not_std)*P_HACKER+scipy.stats.norm.pdf(val,loc=me_mean,scale=me_std)*(1-P_HACKER)
                 )
             )
+
+    fake_passes2 = 0
+    fake_tot2 = 0
+    for test in fake_outcomes2:
+        if test > 0.5:
+            fake_passes2 +=1
+        fake_tot2 += 1
+    print(fake_passes2/fake_tot2)
 
     fig, ((ax1, ax2), (ax3, ax4),(ax5, ax6),(ax7, ax8)) = pyplot.subplots(4, 2)
     fig.suptitle("P(You) Testing Outcomes")
