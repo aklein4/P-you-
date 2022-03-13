@@ -1,5 +1,7 @@
 # P(you)
 
+![explaination video](https://github.com/aklein4/P-you-/blob/master/PYOU-VIDEO.mp4)
+
 Add a new dimension to password identification: **time**
 
 This program uses machine learning to determine the validity of a user based on the timing of their keystrokes.
