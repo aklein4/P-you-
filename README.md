@@ -1,7 +1,5 @@
 # P(you)
 
-https://user-images.githubusercontent.com/90161459/158039334-8aa69305-daea-4f12-be55-d6361b4a4ff4.mp4
-
 Add a new dimension to password identification: **time**
 
 This program uses machine learning to determine the validity of a user based on the timing of their keystrokes.
